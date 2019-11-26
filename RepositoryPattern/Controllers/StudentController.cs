@@ -19,7 +19,7 @@ namespace RepositoryPattern.Controllers
            // some();
             return View(_repository.GetStudents());
         }
-        [Queue("Students")]
+        [Queue("Students-test")]
         private Expression<Action<string>> some()
         {
             for (int i = 0; i < 10; i++)
