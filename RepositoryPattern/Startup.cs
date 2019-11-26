@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using RepositoryPattern.DataAccess;
 using RepositoryPattern.DataAccess.Repository;
 
@@ -29,7 +31,21 @@ namespace RepositoryPattern
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddScoped<IRepository, SqlRepository>();
+            services.AddHangfireServer(op =>
+            {
+                op.Queues = new[] { "Student" };
+            });
+
+            services.AddHangfire(con => con.UseSqlServerStorage(Configuration.GetConnectionString("HangfireDb")));
+            services.AddHangfireServer();
+
+            services.Configure<MongoDatabaseSettings>(Configuration.GetSection(nameof(MongoDatabaseSettings)));
+
+            services.AddSingleton<IMongoDatabaseSettings>(sp => sp.GetRequiredService<IOptions<MongoDatabaseSettings>>().Value);
+
+           services.AddSingleton<MongoContext>();
+
+            services.AddScoped<IRepository, MongoRepository>();
 
             services.AddDbContext<SqlDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("StudentDb")));
 
@@ -49,6 +65,13 @@ namespace RepositoryPattern
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
+            //var options = new BackgroundJobServerOptions
+            //{
+            //    Queues = new string[] {"Test1"}
+            //};
+            //app.UseHangfireServer(options);
+            app.UseHangfireDashboard("/x");
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

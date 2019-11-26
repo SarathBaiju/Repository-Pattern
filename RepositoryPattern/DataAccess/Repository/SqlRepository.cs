@@ -14,7 +14,8 @@ namespace RepositoryPattern.DataAccess.Repository
         }
         public List<Student> GetStudents()
         {
-            return _sqlDbContext.Students.ToList();
+            IQueryable<Student> students= _sqlDbContext.Students;
+            return students.ToList();
         }
     }
 }

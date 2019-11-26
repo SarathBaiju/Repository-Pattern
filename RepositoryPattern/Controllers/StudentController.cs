@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Linq.Expressions;
+using Hangfire;
+using Microsoft.AspNetCore.Mvc;
 using RepositoryPattern.DataAccess;
 
 namespace RepositoryPattern.Controllers
@@ -10,9 +13,20 @@ namespace RepositoryPattern.Controllers
         {
             _repository = repository;
         }
+       
         public IActionResult Index()
-        {           
+        {
+           // some();
             return View(_repository.GetStudents());
+        }
+        [Queue("Student")]
+        private Expression<Action<string>> some()
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                BackgroundJob.Enqueue<IRepository>(s => s.GetStudents());
+            }
+            return null;
         }
     }
 }
